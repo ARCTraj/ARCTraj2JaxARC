@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+output/
+*.pkl
+check_*.py
+validate*.py
