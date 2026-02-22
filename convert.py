@@ -154,7 +154,11 @@ def run_conversion(
             stats["skipped_no_task"] += 1
             continue
 
-        actions = json.loads(row["actionSequence"])
+        try:
+            actions = json.loads(row["actionSequence"])
+        except (json.JSONDecodeError, TypeError):
+            stats["skipped_convert_error"] += 1
+            continue
         if not isinstance(actions, list):
             stats["skipped_convert_error"] += 1
             continue
@@ -218,8 +222,8 @@ def run_conversion(
 
 
 if __name__ == "__main__":
-    CSV_PATH = "/home/sejin/IntentionLearning/dataset/ARCTraj/ARCTraj.csv"
-    ARC_DIR = "/mnt/c/Users/DSLAB/data/ARC-AGI-1/data/training"
-    OUTPUT_DIR = "/home/sejin/arctraj2jaxarc/output"
+    CSV_PATH = "/home/sejin/data/ARCTraj.csv"
+    ARC_DIR = "/home/sejin/data/ARC-AGI-1/data/training"
+    OUTPUT_DIR = "/home/sejin/ARCTraj2JaxARC/output"
 
-    run_conversion(CSV_PATH, ARC_DIR, OUTPUT_DIR, success_only=True)
+    run_conversion(CSV_PATH, ARC_DIR, OUTPUT_DIR, success_only=False)

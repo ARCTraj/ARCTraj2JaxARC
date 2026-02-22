@@ -7,7 +7,7 @@ from collections import Counter
 
 # Load converted data
 print("Loading converted data...")
-with open("/home/sejin/arctraj2jaxarc/output/arctraj_jaxarc.pkl", "rb") as f:
+with open("/home/sejin/ARCTraj2JaxARC/output/arctraj_jaxarc.pkl", "rb") as f:
     data = pickle.load(f)
 print(f"  Loaded {len(data)} trajectories\n")
 
@@ -15,7 +15,7 @@ print(f"  Loaded {len(data)} trajectories\n")
 print("Loading ground truth...")
 import os
 gt = {}
-arc_dir = "/mnt/c/Users/DSLAB/data/ARC-AGI-1/data/training"
+arc_dir = "/home/sejin/data/ARC-AGI-1/data/training"
 for fname in os.listdir(arc_dir):
     if not fname.endswith(".json"):
         continue

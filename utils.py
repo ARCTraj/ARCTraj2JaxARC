@@ -4,7 +4,7 @@ import numpy as np
 
 
 MAX_GRID_SIZE = 30
-BACKGROUND_COLOR = 0
+BACKGROUND_COLOR = -1
 
 
 def pad_grid(grid: np.ndarray, max_size: int = MAX_GRID_SIZE) -> tuple[np.ndarray, np.ndarray]:
