@@ -4,7 +4,7 @@ Convert [ARCTraj](https://huggingface.co/datasets/SejinKimm/ARCTraj) human reaso
 
 ## Overview
 
-ARCTraj contains 10,669 human reasoning trajectories across 400 ARC-AGI-1 tasks, collected via the O2ARC web platform. This pipeline converts them into JaxARC-format transitions suitable for training RL agents.
+ARCTraj contains 10,670 human reasoning trajectories across 400 ARC-AGI-1 tasks, collected via the O2ARC web platform. This pipeline converts them into JaxARC-format transitions suitable for training RL agents.
 
 **Key conversion challenges solved:**
 - **Selection–Operation merging**: ARCTraj records Selection and Operation as separate timesteps; JaxARC combines them into a single `Action(operation_id, selection_mask)`
@@ -12,6 +12,7 @@ ARCTraj contains 10,669 human reasoning trajectories across 400 ARC-AGI-1 tasks,
 - **Mid-trajectory grid resizing**: Grids can change size during a trajectory (e.g., 3×3 → 9×9)
 - **Undo/Redo removal**: History actions are removed while maintaining valid state transitions
 - **State continuity**: O2ARC SelectCell actions modify the grid; handled by using the next operation's grid as `next_state`
+- **JaxARC-compatible padding**: Background color `-1` for padding (matching JaxARC convention)
 
 ## Action Mapping
 
@@ -32,7 +33,7 @@ Each trajectory is a dict with:
 
 | Field | Shape | Type | Description |
 |---|---|---|---|
-| `states` | (T, 30, 30) | int32 | Padded grid states |
+| `states` | (T, 30, 30) | int32 | Padded grid states (padding=-1) |
 | `state_masks` | (T, 30, 30) | bool | Valid cell masks |
 | `next_states` | (T, 30, 30) | int32 | Next grid states |
 | `next_state_masks` | (T, 30, 30) | bool | Next state valid masks |
@@ -43,10 +44,17 @@ Each trajectory is a dict with:
 | `grid_ws` | (T,) | int32 | Per-step grid width |
 | `task_id` | — | str | ARC task identifier |
 | `success` | — | bool | Whether trajectory solved the task |
+| `has_orphan_paste` | — | bool | Paste without preceding Copy (unusable for training) |
 
 ## Usage
 
-### Convert
+### Reconstruct data from split files
+
+```bash
+cat output/arctraj_jaxarc.pkl.part_* > output/arctraj_jaxarc.pkl
+```
+
+### Convert from scratch
 
 ```python
 python convert.py
@@ -71,12 +79,33 @@ for batch in loader:
     # ...
 ```
 
-## Conversion Stats (success_only=True)
+### Filtering
 
-- **Converted**: 7,501 / 10,669 trajectories
+```python
+import pickle
+
+with open("output/arctraj_jaxarc.pkl", "rb") as f:
+    data = pickle.load(f)
+
+# Imitation learning (success + clean only)
+clean_success = [t for t in data if t["success"] and not t["has_orphan_paste"]]  # 7,110
+
+# Offline RL (include failures, exclude broken trajectories)
+all_clean = [t for t in data if not t["has_orphan_paste"]]  # 9,684
+```
+
+## Conversion Stats
+
+- **Total converted**: 10,193 / 10,670 trajectories
 - **Unique tasks**: 400
-- **Avg trajectory length**: 7.7 steps
-- **Length range**: 2–194 steps
+- **Avg trajectory length**: 8.1 steps
+- **Length range**: 1–194 steps
+
+| | Clean | Orphan Paste | Total |
+|---|---:|---:|---:|
+| **Success** | 7,110 | 391 | 7,501 |
+| **Failed** | 2,574 | 118 | 2,692 |
+| **Total** | **9,684** | **509** | **10,193** |
 
 ## References
 
